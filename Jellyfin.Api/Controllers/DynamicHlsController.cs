@@ -302,6 +302,13 @@ namespace Jellyfin.Api.Controllers
                     cancellationToken)
                 .ConfigureAwait(false);
 
+            // Force transcoding to 1080p
+            if (state.VideoRequest is not null && !EncodingHelper.IsCopyCodec(state.OutputVideoCodec))
+            {
+                state.VideoRequest.MaxWidth = 1920;
+                state.VideoRequest.MaxHeight = 1080;
+            }
+
             TranscodingJobDto? job = null;
             var playlistPath = Path.ChangeExtension(state.OutputFilePath, ".m3u8");
 
@@ -1448,6 +1455,13 @@ namespace Jellyfin.Api.Controllers
                     TranscodingJobType,
                     cancellationToken)
                 .ConfigureAwait(false);
+
+            // Force transcoding to 1080p
+            if (state.VideoRequest is not null && !EncodingHelper.IsCopyCodec(state.OutputVideoCodec))
+            {
+                state.VideoRequest.MaxWidth = 1920;
+                state.VideoRequest.MaxHeight = 1080;
+            }
 
             var playlistPath = Path.ChangeExtension(state.OutputFilePath, ".m3u8");
 
