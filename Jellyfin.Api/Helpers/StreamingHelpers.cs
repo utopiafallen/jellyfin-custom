@@ -232,6 +232,12 @@ namespace Jellyfin.Api.Helpers
                 }
             }
 
+            if (state.ActualOutputAudioCodec == "aac" && state.OutputAudioChannels > 2)
+            {
+                // Multi-channel AAC is actually poorly supported everywhere. Force transcoding to a better supported multi-channel format like AC3.
+                state.OutputAudioCodec = "eac3";
+            }
+
             ApplyDeviceProfileSettings(state, dlnaManager, deviceManager, httpRequest, streamingRequest.DeviceProfileId, streamingRequest.Static);
 
             var ext = string.IsNullOrWhiteSpace(state.OutputContainer)
@@ -352,7 +358,9 @@ namespace Jellyfin.Api.Helpers
             try
             {
                 // Parses npt times in the format of '10:19:25.7'
+#pragma warning disable CA1305 // Specify IFormatProvider
                 return TimeSpan.Parse(value).Ticks;
+#pragma warning restore CA1305 // Specify IFormatProvider
             }
             catch
             {
