@@ -2831,6 +2831,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var doDeintH264 = state.DeInterlace("h264", true) || state.DeInterlace("avc", true);
             var doDeintHevc = state.DeInterlace("h265", true) || state.DeInterlace("hevc", true);
             var doDeintH2645 = doDeintH264 || doDeintHevc;
+            bool videoIsHDR = (state.VideoStream.VideoRange == "HDR");
 
             var hasSubs = state.SubtitleStream != null && state.SubtitleDeliveryMethod == SubtitleDeliveryMethod.Encode;
             var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
@@ -2839,7 +2840,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             /* Make main filters for video stream */
             var mainFilters = new List<string>();
 
-            mainFilters.Add(GetOverwriteColorPropertiesParam(state, false));
+            mainFilters.Add(GetOverwriteColorPropertiesParam(state, videoIsHDR));
 
             // INPUT sw surface(memory/copy-back from vram)
             // sw deint
@@ -2862,11 +2863,17 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // sw scale
             mainFilters.Add(swScaleFilter);
-            mainFilters.Add("format=" + outFormat);
 
             // sw tonemap <= TODO: finsh the fast tonemap filter
+            if (videoIsHDR)
+            {
+                string tonemapAlgorithm = options.TonemappingAlgorithm == "bt2390" ? "mobius" : options.TonemappingAlgorithm;
+                string tonemapFilter = $"zscale=t=linear:npl=100,tonemap=tonemap={tonemapAlgorithm}:desat={options.TonemappingDesat}:peak={options.TonemappingPeak},zscale=t=bt709:m=bt709:p=bt709";
+                mainFilters.Add(tonemapFilter);
+            }
 
             // OUTPUT yuv420p/nv12 surface(memory)
+            mainFilters.Add("format=" + outFormat);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
