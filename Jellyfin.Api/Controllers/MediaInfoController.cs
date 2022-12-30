@@ -171,6 +171,33 @@ namespace Jellyfin.Api.Controllers
                 // set device specific data
                 var item = _libraryManager.GetItemById(itemId);
 
+                // Force disable multichannel AAC and require transcoding.
+                bool insertAACStereoProfile = false;
+                foreach (CodecProfile codecProfile in profile.CodecProfiles)
+                {
+                    if (codecProfile.Codec.Contains("aac", StringComparison.OrdinalIgnoreCase))
+                    {
+                        codecProfile.Codec = codecProfile.Codec.Replace("aac", "", StringComparison.OrdinalIgnoreCase);
+                        codecProfile.Codec = codecProfile.Codec.Replace(",,", ",", StringComparison.OrdinalIgnoreCase);
+                        insertAACStereoProfile = true;
+                        break;
+                    }
+                }
+
+                if (insertAACStereoProfile)
+                {
+                    CodecProfile aacStereoProfile = new CodecProfile();
+                    aacStereoProfile.Codec = "aac";
+                    aacStereoProfile.Type = CodecType.VideoAudio;
+                    aacStereoProfile.Conditions = new ProfileCondition[1];
+                    aacStereoProfile.Conditions[0] = new ProfileCondition(ProfileConditionType.LessThanEqual, ProfileConditionValue.AudioChannels, "2", true);
+                    int lastIdx = profile.CodecProfiles.Length;
+                    CodecProfile[] prevArray = profile.CodecProfiles;
+                    profile.CodecProfiles = new CodecProfile[lastIdx + 1];
+                    Array.Copy(prevArray, profile.CodecProfiles, lastIdx);
+                    profile.CodecProfiles[lastIdx] = aacStereoProfile; 
+                }
+
                 foreach (var mediaSource in info.MediaSources)
                 {
                     _mediaInfoHelper.SetDeviceSpecificData(

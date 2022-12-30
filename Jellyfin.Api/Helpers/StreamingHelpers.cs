@@ -232,10 +232,11 @@ namespace Jellyfin.Api.Helpers
                 }
             }
 
-            if (state.ActualOutputAudioCodec == "aac" && state.OutputAudioChannels > 2)
+            if (state.AudioStream.Codec == "aac" && state.AudioStream.Channels > 2)
             {
                 // Multi-channel AAC is actually poorly supported everywhere. Force transcoding to a better supported multi-channel format like AC3.
                 state.OutputAudioCodec = "eac3";
+                state.OutputAudioChannels = state.AudioStream.Channels;
             }
 
             ApplyDeviceProfileSettings(state, dlnaManager, deviceManager, httpRequest, streamingRequest.DeviceProfileId, streamingRequest.Static);
