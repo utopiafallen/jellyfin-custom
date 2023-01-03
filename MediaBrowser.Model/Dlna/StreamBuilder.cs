@@ -804,7 +804,8 @@ namespace MediaBrowser.Model.Dlna
             }
 
             // Prefer matching audio codecs, could do better here
-            var audioCodecs = ContainerProfile.SplitValue(audioCodec);
+            string amendedAudioCodec = audioCodec.Contains("ac3", StringComparison.OrdinalIgnoreCase) ? audioCodec + ",eac3" : audioCodec;
+            var audioCodecs = ContainerProfile.SplitValue(amendedAudioCodec);
             var directAudioStream = candidateAudioStreams.FirstOrDefault(stream => ContainerProfile.ContainsContainer(audioCodecs, stream.Codec));
             playlistItem.AudioCodecs = audioCodecs;
             if (directAudioStream != null)
